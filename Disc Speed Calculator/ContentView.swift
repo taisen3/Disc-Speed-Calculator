@@ -9,13 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        ZStack {
+            Image("background-wood-grain")
+            Text("Velkommen til min app")
+                .font(Font.largeTitle.bold())
         }
-        .padding()
     }
 }
 
