@@ -21,3 +21,6 @@ flowchart TD
 
 
 ```
+Kamera - AVFoundation 
+
+Object-detection - Vision / CoreML
