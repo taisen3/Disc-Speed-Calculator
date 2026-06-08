@@ -9,13 +9,37 @@ import SwiftUI
 
 struct ContentView: View {
     let camera = CameraManager()
+    @State private var isRunning = false
 
     var body: some View {
-        CameraPreviewView(session: camera.session)
-            .ignoresSafeArea()
-            .onAppear {
-                camera.requestPermissionAndSetup()
+        ZStack {
+            CameraPreviewView(session: camera.session)
+                .ignoresSafeArea()
+            
+            if (!isRunning) {
+                Color
+                    .black
+                    .opacity(0.5)
+                    .ignoresSafeArea()
             }
+
+            VStack {
+                //Spacer()
+                Button(isRunning ? "Stop" : "Start") {
+                    if isRunning {
+                        camera.stop()
+                    } else {
+                        camera.start()
+                    }
+                    isRunning.toggle()
+                }
+                .font(Font.largeTitle.bold())
+                .padding()
+            }
+        }
+        .onAppear {
+            camera.requestPermissionAndSetup()
+        }
     }
 }
 

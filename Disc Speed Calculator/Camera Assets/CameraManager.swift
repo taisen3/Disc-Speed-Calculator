@@ -47,7 +47,7 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             return
         }
 
-
+        // Sørger for at kamera opererer på samme fps som actualfps
         do {
             try device.lockForConfiguration()
             
@@ -57,7 +57,7 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             //DEBUG
             print("actualFPS = \(actualFPS)")
             
-            let duration = CMTime(value: 1, timescale: CMTimeScale(targetFPS))
+            let duration = CMTime(value: 1, timescale: CMTimeScale(actualFPS))
             device.activeVideoMinFrameDuration = duration
             device.activeVideoMaxFrameDuration = duration
             
@@ -72,8 +72,16 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         let output = AVCaptureVideoDataOutput()
         output.setSampleBufferDelegate(self, queue: DispatchQueue(label: "camera.queue"))
         session.addOutput(output)
+    }
+    
+    func start() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.session.startRunning()
+        }
+    }
 
-        session.startRunning()
+    func stop() {
+        session.stopRunning()
     }
 
     // MARK: - Hjelpefunksjoner
