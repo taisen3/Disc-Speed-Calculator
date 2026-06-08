@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct ContentView: View {
+    let camera = CameraManager()
+
     var body: some View {
-        ZStack {
-            Image("background-wood-grain")
-            Text("Velkommen til min app")
-                .font(Font.largeTitle.bold())
-        }
+        CameraPreviewView(session: camera.session)
+            .ignoresSafeArea()
+            .onAppear {
+                camera.requestPermissionAndSetup()
+            }
     }
 }
 
