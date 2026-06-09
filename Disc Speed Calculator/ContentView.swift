@@ -13,7 +13,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            CameraPreviewView(session: camera.session)
+            CameraPreviewView(session: camera.session) // tar inn session fra Camera Manager
                 .ignoresSafeArea()
             
             if (!isRunning) {
