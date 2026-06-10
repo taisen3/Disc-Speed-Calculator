@@ -10,8 +10,14 @@ import AVFoundation
 
 class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
 
+    
+    // Kamera som gir ut frames
     let session = AVCaptureSession()
     private(set) var actualFPS: Int = 60  // hva vi faktisk fikk
+    
+    // Disc deteksjon og tracking
+    private let tracker = DiscTracker()
+    private var isTracking = false
 
     // MARK: - Tillatelse
 
@@ -137,7 +143,31 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         didOutput sampleBuffer: CMSampleBuffer,
         from connection: AVCaptureConnection
     ) {
-        //processFrame(sampleBuffer)
+        processFrame(sampleBuffer)
         print("Frame mottatt") // Midlertidig print
     }
+    
+    // prosseser frames og let etter og spor disc
+    func processFrame(_ buffer: CMSampleBuffer) {
+        if !isTracking {
+            // Prøv å finne disken
+            if let observation = tracker.findDisc(in: buffer) {
+                tracker.startTracking(in: observation)
+                isTracking = true
+                print("Disc funnet – starter sporing")
+            }
+        } else {
+            // Spor disken
+            if let center = tracker.processFrame(buffer) {
+                print("Disc posisjon: \(center)")
+            }
+        }
+    }
+    
 }
+
+
+
+
+
+
