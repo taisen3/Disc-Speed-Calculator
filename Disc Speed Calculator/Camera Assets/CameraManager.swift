@@ -16,7 +16,7 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private(set) var actualFPS: Int = 60  // hva vi faktisk fikk
     
     // Disc deteksjon og tracking
-    private let tracker = DiscTracker()
+    private(set) var tracker = DiscTracker()
     private var isTracking = false
 
     // MARK: - Tillatelse

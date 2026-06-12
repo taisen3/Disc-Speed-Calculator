@@ -16,16 +16,18 @@ struct DiscObservation {
     let boundingBox: CGRect
 }
 
+@Observable
 class DiscTracker {
     
     private var sequenceHandler = VNSequenceRequestHandler()
     private var trackingRequest: VNTrackObjectRequest?
     
-    private(set) var observations: [DiscObservation] = []
+    private(set) var observations: [DiscObservation] = [] // liste over alle observasjoner av disc
     private var frameIndex: Int = 0
     
-    // FOR Å FINNE DISCEN
+    var lastBoundingBox: CGRect? = nil // brukes til å lage boks rundt observert disc
     
+    // FOR Å FINNE DISCEN
     func findDisc(in buffer: CMSampleBuffer) -> VNDetectedObjectObservation? {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(buffer) else { return nil }
         
@@ -66,6 +68,8 @@ class DiscTracker {
             try? sequenceHandler.perform([request], on: pixelBuffer)
             
             guard let result = request.results?.first as? VNDetectedObjectObservation else { return nil }
+        
+            lastBoundingBox = result.boundingBox // LAGER BOKS RUNDT DISC
             
             let center = CGPoint(
                 x: result.boundingBox.midX,
@@ -80,6 +84,8 @@ class DiscTracker {
                 boundingBox: result.boundingBox
             )
             observations.append(observation)
+        
+        
             
             return center
         }
