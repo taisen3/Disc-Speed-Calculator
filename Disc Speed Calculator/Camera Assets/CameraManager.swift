@@ -144,7 +144,7 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
         from connection: AVCaptureConnection
     ) {
         processFrame(sampleBuffer)
-        print("Frame mottatt") // Midlertidig print
+        //print("Frame mottatt") // Midlertidig print
     }
     
     // prosseser frames og let etter og spor disc
@@ -160,6 +160,11 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
             // Spor disken
             if let center = tracker.processFrame(buffer) {
                 print("Disc posisjon: \(center)")
+            } else {
+                // Vision mistet disken – nullstill og let på nytt
+                isTracking = false
+                tracker.reset()
+                print("Disc mistet – leter på nytt")
             }
         }
     }
