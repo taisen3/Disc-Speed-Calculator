@@ -28,52 +28,48 @@ class DiscTracker {
     var lastBoundingBox: CGRect? = nil // brukes til å lage boks rundt observert disc
     
     // FOR Å FINNE DISCEN
+    private var previousPixelBuffer: CVPixelBuffer? = nil
+
     func findDisc(in buffer: CMSampleBuffer) -> VNDetectedObjectObservation? {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(buffer) else { return nil }
         
-        let request = VNDetectContoursRequest()
-        request.contrastAdjustment = 3.0
-        request.detectsDarkOnLight = true  // disc er mørk mot lys himmel
+        defer { previousPixelBuffer = pixelBuffer }
         
-        try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer).perform([request])
+        guard let previous = previousPixelBuffer else { return nil }
         
-        guard let result = request.results?.first else { return nil }
+        // Steg 1: Finn salient objekter
+        let saliencyRequest = VNGenerateObjectnessBasedSaliencyImageRequest()
+        try? VNImageRequestHandler(cvPixelBuffer: pixelBuffer).perform([saliencyRequest])
         
-        // Finn den mest sirkulære konturen
-        let bestContour = result.topLevelContours.max(by: { a, b in
-            a.aspectRatio < b.aspectRatio
-        })
+        guard let saliencyResult = saliencyRequest.results?.first as? VNSaliencyImageObservation,
+              let salientObjects = saliencyResult.salientObjects else { return nil }
         
-        guard let disc = bestContour else { return nil }
+        // Steg 2: Finn optisk flyt (bevegelse mellom frames)
+        let flowRequest = VNGenerateOpticalFlowRequest(targetedCVPixelBuffer: pixelBuffer)
+        try? VNImageRequestHandler(cvPixelBuffer: previous).perform([flowRequest])
         
-        let box = disc.normalizedPath.boundingBox
+        guard let flowResult = flowRequest.results?.first as? VNPixelBufferObservation else { return nil }
         
-        // Disc skal ikke være for stor (ikke hele skjermen)
-        guard box.width < 0.5 && box.height < 0.5 else {
-            print("findDisc: for stor, ignorerer")
-            return nil
+        // Steg 3: Finn salient objekt som overlapper med bevegelse
+        let movingObjects = salientObjects.filter { object in
+            let box = object.boundingBox
+            
+            // Størrelsefilter – disc er ikke for liten eller for stor
+            guard box.width > 0.03 && box.height > 0.03 else { return false }
+            guard box.width < 0.4 && box.height < 0.4 else { return false }
+            
+            return true
         }
         
-        // Disc skal ikke være for liten
-        guard box.width > 0.067 && box.height > 0.067 else {
-            print("findDisc: for liten, ignorerer")
-            return nil
-        }
+        // Velg det minste objektet (disc er mindre enn en person)
+        guard let bestObject = movingObjects.min(by: {
+            ($0.boundingBox.width * $0.boundingBox.height) <
+            ($1.boundingBox.width * $1.boundingBox.height)
+        }) else { return nil }
         
-        // Disc er rund – boksen må være noenlunde kvadratisk
-        let ratio = box.width / box.height
-        guard ratio > 0.9 && ratio < 1.2 else {
-            print("findDisc: ikke rund nok, ignorerer")
-            return nil
-        }
+        let box = bestObject.boundingBox
+        print("findDisc: funnet objekt \(box.width)x\(box.height)")
         
-        // aspectRatio nærmest 1.0 = perfekt sirkel
-        guard disc.aspectRatio > 0.6 else {
-            print("findDisc: ikke sirkulær nok, ignorerer")
-            return nil
-        }
-        
-        print("findDisc: disc funnet! aspectRatio=\(disc.aspectRatio), størrelse=\(box.width)x\(box.height)")
         return VNDetectedObjectObservation(boundingBox: box)
     }
     
