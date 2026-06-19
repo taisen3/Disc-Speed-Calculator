@@ -148,21 +148,25 @@ class CameraManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     }
     
     // prosseser frames og let etter og spor disc
+    private var frameCount = 0
+
+    
     func processFrame(_ buffer: CMSampleBuffer) {
-        if !isTracking {
-            // Prøv å finne disken
-            if let observation = tracker.findDisc(in: buffer) {
-                tracker.startTracking(in: observation)
+        frameCount += 1
+        
+        // Kjør CoreML på hvert 3. frame uansett om vi tracker eller ikke
+        guard frameCount % 3 == 0 else { return }
+        
+        if let observation = tracker.findDisc(in: buffer) {
+            if !isTracking {
                 isTracking = true
                 print("Disc funnet – starter sporing")
             }
+            tracker.addObservation(from: observation, buffer: buffer)
         } else {
-            // Spor disken
-            if let center = tracker.processFrame(buffer) {
-                print("Disc posisjon: \(center)")
-            } else {
-                // Vision mistet disken – nullstill og let på nytt
+            if isTracking {
                 isTracking = false
+                tracker.endSession()
                 tracker.reset()
                 print("Disc mistet – leter på nytt")
             }

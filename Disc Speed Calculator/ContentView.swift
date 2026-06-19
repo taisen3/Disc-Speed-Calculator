@@ -18,23 +18,33 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             // Bounding box overlay
-                        GeometryReader { geo in
-                            if let box = camera.tracker.lastBoundingBox {
-                                Rectangle()
-                                    .stroke(Color.red, lineWidth: 2)
-                                    .frame(
-                                        width: box.width * geo.size.width,
-                                        height: box.height * geo.size.height
-                                    )
-                                    .position(
-                                        x: box.midX * geo.size.width,
-                                        y: (1 - box.midY) * geo.size.height // 1 - box.midY fordi man må speile Y-aksen av en eller annen grunn:)
-                                    )
-                                // box.width,height, midX og midY må alle gangen med geo.size fordi;
-                                // det er måten boksen faktisk blir synlig på faktisk skjermstørrelse.
-                                // altså konverterer boksen fra data -> piksler
-                            }
-                        }
+            GeometryReader { geo in
+                if let box = camera.tracker.lastBoundingBox {
+                    let _ = print("Box: midX=\(box.midX), midY=\(box.midY)")
+                    Rectangle()
+                        .stroke(Color.red, lineWidth: 2)
+                        .frame(
+                            width: box.height * geo.size.width,
+                            height: box.width * geo.size.height
+                        )
+                        .position(
+                            x: box.midY * geo.size.width,
+                            y: box.midX * geo.size.height
+                        )
+                }
+                // Vis alle detekterte posisjoner som røde sirkler
+                ForEach(Array(camera.tracker.detectionPoints.enumerated()), id: \.offset) { _, point in
+                    Circle()
+                        .fill(Color.red.opacity(0.7))
+                        .frame(width: 12, height: 12)
+                        .position(
+                            x: point.y * geo.size.width,
+                            y: point.x * geo.size.height
+                        )
+                }
+                
+            }
+            
             
             if (!isRunning) {
                 Color
